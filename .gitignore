@@ -12,6 +12,7 @@
 hs_err_pid*
 
 /.idea
+/target
 
 /enron-bigdata.iml
 
