@@ -8,6 +8,6 @@ public class EnronTest {
     @Test
     public void OpenAZipStream() throws Exception {
         ClassLoader loader = Test.class.getClassLoader();
-        assertEquals(20, seborama.enron.Main.OpenZipStream(loader.getResource("testZip.zip").getPath()));
+        assertEquals(14, seborama.enron.Main.OpenZipStream(loader.getResource("testZip.zip").getPath()));
     }
 }
