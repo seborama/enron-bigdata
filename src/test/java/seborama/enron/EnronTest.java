@@ -2,11 +2,12 @@ package seborama.enron;
 
 import org.junit.Test;
 
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 public class EnronTest {
     @Test
-    public void OpenAZipFile() throws Exception {
-        assertTrue(seborama.enron.Main.OpenZipFile());
+    public void OpenAZipStream() throws Exception {
+        ClassLoader loader = Test.class.getClassLoader();
+        assertEquals(20, seborama.enron.Main.OpenZipStream(loader.getResource("testZip.zip").getPath()));
     }
 }
