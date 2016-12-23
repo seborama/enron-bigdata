@@ -7,7 +7,9 @@ import static org.junit.Assert.assertEquals;
 public class EnronTest {
     @Test
     public void OpenAZipStream() throws Exception {
-        ClassLoader loader = Test.class.getClassLoader();
-        assertEquals(14, seborama.enron.Main.OpenZipStream(loader.getResource("testZip.zip").getPath()));
+        EnronZipStream zipStream = new EnronZipStream();
+
+        assertEquals(20, zipStream.OpenZipStream(
+                Test.class.getClassLoader().getResource("testZip.zip").getPath()));
     }
 }
