@@ -7,9 +7,15 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
 
 public class EnronZipStream {
     public long OpenZipStream(String zip) throws IOException {
@@ -24,7 +30,15 @@ public class EnronZipStream {
                 .filter(isText)
                 .map(ze -> getEmailBody(zipFile, ze))
                 .flatMap(Arrays::stream)
+                .map(line -> getWords(line))
+                .flatMap(Arrays::stream)
                 .count();
+    }
+
+    private String[] getWords(String line) {
+        Predicate<String> isNotEmpty = s -> s != null && !s.isEmpty();
+
+        return Stream.of(line.split("\\W+")).filter(isNotEmpty).toArray(String[]::new);
     }
 
     private String[] getEmailBody(ZipFile zipFile, ZipEntry zipEntry) {
