@@ -9,7 +9,7 @@ public class EnronTest {
     public void OpenAZipStream() throws Exception {
         EnronZipStream zipStream = new EnronZipStream();
 
-        assertEquals(20, zipStream.OpenZipStream(
+        assertEquals(120, zipStream.OpenZipStream(
                 Test.class.getClassLoader().getResource("testZip.zip").getPath()));
     }
 }
