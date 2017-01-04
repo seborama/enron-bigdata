@@ -16,6 +16,7 @@ import java.util.zip.ZipFile;
 
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toMap;
 
 public class EnronZipStream {
     public long OpenZipStream(String zip) throws IOException {
@@ -24,10 +25,12 @@ public class EnronZipStream {
         Predicate<ZipEntry> isText = ze -> ze.getName().matches("^.*[A-Z]\\.txt$");
 
         ZipFile zipFile = new ZipFile(zip);
+        // TODO: 04/01/2017 TBC!!
+        Map<String, String[]> blah = zipFile.stream()
+                .filter(isFile.and(isText).and(isInTextDirectory))
+                .collect(toMap(ze -> ze.getName(), ze -> getEmailBody(zipFile, ze)));
         return zipFile.stream()
-                .filter(isFile)
-                .filter(isInTextDirectory)
-                .filter(isText)
+                .filter(isFile.and(isText).and(isInTextDirectory))
                 .map(ze -> getEmailBody(zipFile, ze))
                 .flatMap(Arrays::stream)
                 .map(line -> getWords(line))
@@ -44,6 +47,7 @@ public class EnronZipStream {
     private String[] getEmailBody(ZipFile zipFile, ZipEntry zipEntry) {
         List<String> writer = new ArrayList<>();
 
+        // Unfortunately you have to close functional file streams explicitly with try/with statements.
         try (InputStream inputStream = zipFile.getInputStream(zipEntry);
              BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
 
