@@ -1,86 +1,87 @@
 package seborama.enron;
 
-import java.io.*;
-import java.util.*;
-import java.util.function.Function;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Predicate;
-import java.util.stream.LongStream;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static java.util.stream.Collectors.counting;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toMap;
-
-class KeyValue<K, V> {
-    public K key;
-    public V value;
-
-    public KeyValue(K key, V value) {
-        this.key = key;
-        this.value = value;
-    }
-}
-
 public class EnronZipStream {
-    public long OpenZipStream(String zip) throws IOException {
+    private static final Pattern reWords = Pattern.compile("\\W+");
+    private static final Pattern reTextEmail = Pattern.compile("text_.*[A-Z]\\.txt$");
+
+    public long OpenZipStream(String dir) throws IOException {
+        Predicate<Path> pathEntryIsFile = entry -> entry.toFile().isFile();
+        Predicate<Path> pathEntryIsZip = entry -> entry.toFile().toString().toLowerCase().endsWith(".zip");
+
         Predicate<ZipEntry> isFile = ze -> !ze.isDirectory();
-        Predicate<ZipEntry> isInTextDirectory = ze -> ze.getName().contains("text_000/");
-        Predicate<ZipEntry> isTextEmail = ze -> ze.getName().matches("^.*[A-Z]\\.txt$");
+        Predicate<ZipEntry> isTextEmail = ze -> reTextEmail.matcher(ze.getName()).matches();
 
-        ZipFile zipFile = new ZipFile(zip);
+        int numCores = Runtime.getRuntime().availableProcessors() / 2;
+        numCores = 1;
+        System.out.printf("Setting ForkJoinPool parallelism to %d\n", numCores);
+        System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", String.valueOf(numCores));
 
-//        System.out.println("DEBUG 2");
-//        return zipFile.stream()
-//                .filter(isFile.and(isTextEmail).and(isInTextDirectory))
-//                .map(ze -> getEmailBody(zipFile, ze))
-//                .flatMap(Arrays::stream)
-//                .map(line -> getWords(line))
-//                .flatMap(Arrays::stream)
-//                .count();
+        long avgWordsPerEmail = Files.list(Paths.get(dir))
+                .filter(pathEntryIsFile.and(pathEntryIsZip))
+                .map(path -> {
+                    try {
+                        System.out.println(path.toString());
+                        return new ZipFile(path.toString());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        return null;
+                    }
+                })
+                .map(zipFile -> zipFile.stream()
+                        .filter(isFile.and(isTextEmail))
+                        .map(ze -> Stream.of(getEmailBody(zipFile, ze)) // Stream<String>
+                                .map(line -> getWordCount(line)) // Stream<Long>
+                                .collect(Collectors.summingLong(Long::longValue)))
+                        .parallel()
+                        .collect(Collectors.averagingLong(Long::longValue)))
+                .parallel()
+                .collect(Collectors.averagingLong(Double::longValue)).longValue();
 
-        Map<String, Long> blah1b = zipFile.stream()
-                .filter(isFile.and(isTextEmail).and(isInTextDirectory))
-                .collect(toMap(ze -> ze.getName(), ze -> Stream.of(getEmailBody(zipFile, ze))
-                        .map(line -> getWords(line))
-                        .flatMap(Arrays::stream)
-                        .count()
-                ));
-
-        return new Double(blah1b.entrySet().stream()
-                .flatMapToLong(es -> LongStream.of(es.getValue()))
-                .average()
-                .getAsDouble()).longValue();
+        return avgWordsPerEmail;
     }
 
-    private String[] getWords(String line) {
-        Predicate<String> isNotEmpty = s -> s != null && !s.isEmpty();
+    private long getWordCount(String line) {
+        Predicate<String> isNotEmpty = s -> !s.isEmpty();
 
-        return Stream.of(line.split("\\W+")).filter(isNotEmpty).toArray(String[]::new);
+        return Stream.of(reWords.split(line)).filter(isNotEmpty).count();
     }
 
     private String[] getEmailBody(ZipFile zipFile, ZipEntry zipEntry) {
-        List<String> writer = new ArrayList<>();
+        List<String> writer = new ArrayList<>(1024);
 
         // Unfortunately you have to close functional file streams explicitly with try/with statements.
         try (InputStream inputStream = zipFile.getInputStream(zipEntry);
              BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
 
             String line;
-            boolean inBody = false;
             while ((line = reader.readLine()) != null) {
-                if (inBody) {
-                    if (line.equals("***********")) {
-                        inBody = false;
-                        continue;
-                    }
+                if (line.startsWith("X-ZLID: "))
+                    break;
+            }
 
-                    writer.add(line);
-                } else if (line.startsWith("X-ZLID: ")) inBody = true;
+            while ((line = reader.readLine()) != null) {
+                if (line.equals("***********"))
+                    break;
+                writer.add(line);
             }
         } catch (IOException e) {
-            // TODO: 03/01/2017 something useful with the error
+            e.printStackTrace();
         }
 
         return writer.toArray(new String[0]);
