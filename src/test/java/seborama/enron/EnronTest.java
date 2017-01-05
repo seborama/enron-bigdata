@@ -11,7 +11,7 @@ public class EnronTest {
     public void OpenAZipStream() throws Exception {
         EnronZipStream zipStream = new EnronZipStream();
 
-        assertEquals(2844, zipStream.OpenZipStream(
+        assertEquals(142, zipStream.OpenZipStream(
                 Test.class.getClassLoader().getResource("testZip.zip").getPath()));
     }
 

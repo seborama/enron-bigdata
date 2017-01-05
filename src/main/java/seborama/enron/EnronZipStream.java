@@ -1,15 +1,10 @@
 package seborama.enron;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -18,24 +13,46 @@ import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 
+class KeyValue<K, V> {
+    public K key;
+    public V value;
+
+    public KeyValue(K key, V value) {
+        this.key = key;
+        this.value = value;
+    }
+}
+
 public class EnronZipStream {
-    public long OpenZipStream(String zip) throws IOException {
+    public <R> long OpenZipStream(String zip) throws IOException {
         Predicate<ZipEntry> isFile = ze -> !ze.isDirectory();
         Predicate<ZipEntry> isInTextDirectory = ze -> ze.getName().contains("text_000/");
         Predicate<ZipEntry> isText = ze -> ze.getName().matches("^.*[A-Z]\\.txt$");
 
         ZipFile zipFile = new ZipFile(zip);
-        // TODO: 04/01/2017 TBC!!
-        Map<String, String[]> blah = zipFile.stream()
+
+//        System.out.println("DEBUG 2");
+//        return zipFile.stream()
+//                .filter(isFile.and(isText).and(isInTextDirectory))
+//                .map(ze -> getEmailBody(zipFile, ze))
+//                .flatMap(Arrays::stream)
+//                .map(line -> getWords(line))
+//                .flatMap(Arrays::stream)
+//                .count();
+
+        System.out.println("DEBUG 1");
+        Map<String, Long> blah1b = zipFile.stream()
                 .filter(isFile.and(isText).and(isInTextDirectory))
-                .collect(toMap(ze -> ze.getName(), ze -> getEmailBody(zipFile, ze)));
-        return zipFile.stream()
-                .filter(isFile.and(isText).and(isInTextDirectory))
-                .map(ze -> getEmailBody(zipFile, ze))
-                .flatMap(Arrays::stream)
-                .map(line -> getWords(line))
-                .flatMap(Arrays::stream)
-                .count();
+                .collect(toMap(ze -> ze.getName(), ze -> Stream.of(getEmailBody(zipFile, ze))
+                        .map(line -> getWords(line))
+                        .flatMap(Arrays::stream)
+                        .count()
+                ));
+
+        return new Double(blah1b.entrySet().stream()
+                .flatMapToLong(es -> LongStream.of(es.getValue()))
+                .average()
+                .getAsDouble()).longValue();
     }
 
     private String[] getWords(String line) {
