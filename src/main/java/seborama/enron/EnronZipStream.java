@@ -24,25 +24,24 @@ class KeyValue<K, V> {
 }
 
 public class EnronZipStream {
-    public <R> long OpenZipStream(String zip) throws IOException {
+    public long OpenZipStream(String zip) throws IOException {
         Predicate<ZipEntry> isFile = ze -> !ze.isDirectory();
         Predicate<ZipEntry> isInTextDirectory = ze -> ze.getName().contains("text_000/");
-        Predicate<ZipEntry> isText = ze -> ze.getName().matches("^.*[A-Z]\\.txt$");
+        Predicate<ZipEntry> isTextEmail = ze -> ze.getName().matches("^.*[A-Z]\\.txt$");
 
         ZipFile zipFile = new ZipFile(zip);
 
 //        System.out.println("DEBUG 2");
 //        return zipFile.stream()
-//                .filter(isFile.and(isText).and(isInTextDirectory))
+//                .filter(isFile.and(isTextEmail).and(isInTextDirectory))
 //                .map(ze -> getEmailBody(zipFile, ze))
 //                .flatMap(Arrays::stream)
 //                .map(line -> getWords(line))
 //                .flatMap(Arrays::stream)
 //                .count();
 
-        System.out.println("DEBUG 1");
         Map<String, Long> blah1b = zipFile.stream()
-                .filter(isFile.and(isText).and(isInTextDirectory))
+                .filter(isFile.and(isTextEmail).and(isInTextDirectory))
                 .collect(toMap(ze -> ze.getName(), ze -> Stream.of(getEmailBody(zipFile, ze))
                         .map(line -> getWords(line))
                         .flatMap(Arrays::stream)
