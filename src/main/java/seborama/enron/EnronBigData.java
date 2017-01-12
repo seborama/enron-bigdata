@@ -10,7 +10,7 @@ public class EnronBigData {
         if (args.length != 1)
             usage();
 
-        setParallelism();
+//        setParallelism();
 
         AverageWordsPerMail averageWordsPerMail = new AverageWordsPerMail();
         System.out.println("Average length, in words, of the emails\n(ignoring attachments):\n" + averageWordsPerMail.calculate(args[0]) + "\n\n");
@@ -21,7 +21,6 @@ public class EnronBigData {
 
     private static void setParallelism() {
         int numCores = Runtime.getRuntime().availableProcessors() / 2;
-        numCores = 2;
         System.out.printf("Setting ForkJoinPool parallelism to %d\n", numCores);
         System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", String.valueOf(numCores));
     }
