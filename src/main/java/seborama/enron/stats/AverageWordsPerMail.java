@@ -12,6 +12,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class AverageWordsPerMail {
+
     private static final Pattern reWords = Pattern.compile("\\W+");
     private static final Pattern reTextEmail = Pattern.compile("^.*[A-Z]\\.txt$");
 
@@ -23,33 +24,53 @@ public class AverageWordsPerMail {
         Predicate<ZipEntry> isTextEmail = ze -> ze.getName().contains("text_") && reTextEmail.matcher(ze.getName()).matches();
 
         return Files.list(Paths.get(dir))
-                .filter(pathEntryIsZip.and(pathEntryIsFile))
-                .map(path -> {
-                    try {
-                        System.out.println(path.toString());
-                        return new ZipFile(path.toString());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        return null;
-                    }
-                })
-                .map(zipFile -> zipFile.stream()
-                        .filter(isFile.and(isTextEmail))
-                        .map(ze -> Stream.of(getEmailBody(zipFile, ze)) // Stream<String>
-                                .map(this::getWordCount) // Stream<Long>
-                                .collect(Collectors.summingLong(Long::longValue)))
-                        .parallel()
-                        .collect(Collectors.averagingLong(Long::longValue)))
-                .collect(Collectors.averagingLong(Double::longValue)).longValue();
+            .filter(pathEntryIsZip.and(pathEntryIsFile))
+            .map(path -> {
+                try {
+//                    System.out.println(path.toString());
+                    return new ZipFile(path.toString());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            })
+            .map(
+                zipFile -> zipFile.stream()
+                    .filter(isFile.and(isTextEmail))
+                    .map(
+                        ze -> getEmailBody(zipFile, ze) // Stream<String>
+                            .map(this::getWordCount) // Stream<Long>
+                            .collect(Collectors.summingLong(Long::longValue)))
+                    .parallel()
+                    .collect(Collectors.averagingLong(Long::longValue)))
+            .collect(Collectors.averagingLong(Double::longValue)).longValue();
     }
 
-    private long getWordCount(String line) {
+    private long getWordCountV1(String line) {
         Predicate<String> isNotEmpty = s -> !s.isEmpty();
 
         return Stream.of(reWords.split(line)).filter(isNotEmpty).count();
     }
 
-    private String[] getEmailBody(ZipFile zipFile, ZipEntry zipEntry) {
-        return new ZipMailReader(zipFile, zipEntry).read();
+    private long getWordCount(String line) {
+        int pos = 0, end, count = 0;
+
+        while ((end = line.indexOf(' ', pos)) >= 0) {
+            count++;
+            pos = end + 1;
+
+            try {
+                while (line.charAt(pos) == ' ') {
+                    pos++;
+                }
+            } catch (IndexOutOfBoundsException ignored) {
+            }
+        }
+
+        return count;
+    }
+
+    private Stream<String> getEmailBody(ZipFile zipFile, ZipEntry zipEntry) {
+        return new ZipMailReader(zipFile, zipEntry).readBody();
     }
 }

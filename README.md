@@ -31,13 +31,11 @@ java -jar seborama.enron-bigdata-1.0-SNAPSHOT.jar path/to/enron/v2/zip/files
 mvn site
 ```
 
-Then (on OSX) type:
+The output is available from:
 
 ```bash
 open target/site/index.html
 ```
-
-Or just open the index.html file manually in your browser of choice.
 
 ### Generate Javadoc
 
@@ -45,10 +43,8 @@ Or just open the index.html file manually in your browser of choice.
 mvn javadoc:javadoc
 ```
 
-Then (on OSX) type:
+The output is available from:
 
 ```bash
 open target/site/apidocs/index.html
 ```
-
-Or just open the index.html file manually in your browser of choice.

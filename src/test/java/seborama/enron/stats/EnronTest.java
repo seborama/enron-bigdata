@@ -15,7 +15,7 @@ public class EnronTest {
         String resourcesDir = new File(Test.class.getClassLoader().getResource("testZip.zip").toURI())
                 .getParent();
 
-        assertEquals(142, averageWordsPerMail.calculate(resourcesDir));
+        assertEquals(126, averageWordsPerMail.calculate(resourcesDir));
     }
 
     @Test(expected = IOException.class)
