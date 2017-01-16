@@ -23,7 +23,7 @@ public class AverageWordsPerMail {
         Predicate<ZipEntry> isFile = ze -> !ze.isDirectory();
         Predicate<ZipEntry> isTextEmail = ze -> ze.getName().contains("text_") && reTextEmail.matcher(ze.getName()).matches();
 
-        return Files.list(Paths.get(dir))
+        return Files.list(Paths.get(dir)).parallel()
             .filter(pathEntryIsZip.and(pathEntryIsFile))
             .map(path -> {
                 try {
@@ -33,16 +33,16 @@ public class AverageWordsPerMail {
                     e.printStackTrace();
                     return null;
                 }
-            })
+            }).parallel()
             .map(
                 zipFile -> zipFile.stream()
                     .filter(isFile.and(isTextEmail))
                     .map(
-                        ze -> getEmailBody(zipFile, ze) // Stream<String>
-                            .map(this::getWordCount) // Stream<Long>
+                        ze -> getEmailBody(zipFile, ze).parallel() // Stream<String>
+                            .map(this::getWordCount).parallel() // Stream<Long>
                             .collect(Collectors.summingLong(Long::longValue)))
                     .parallel()
-                    .collect(Collectors.averagingLong(Long::longValue)))
+                    .collect(Collectors.averagingLong(Long::longValue))).parallel()
             .collect(Collectors.averagingLong(Double::longValue)).longValue();
     }
 
