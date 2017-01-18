@@ -3,10 +3,11 @@ language: java
 #  - oraclejdk8
 
 before_install:
-  # Make sure everything's up to date.
+  # get latest JVM repo
   - sudo echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main" | tee /etc/apt/sources.list.d/webupd8team-java.list
   - sudo echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list
   - sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
+  # make sure everything's up to date
   - sudo apt-get update -qq
 
 install:
