@@ -4,6 +4,14 @@
 
 Sainsbury's BigData test.
 
+## Requirements
+
+This project requires to download the Enron email dataset. A starting point may be:
+
+https://www.cs.cmu.edu/~enron/
+
+Extract the dataset and supply the path when running the application (see below).
+
 ## Maven
 
 ### Running the tests
@@ -26,6 +34,8 @@ You need to create the jar file first (see `mvn package` above)
 ```bash
 java -jar seborama.enron-bigdata-1.0-SNAPSHOT.jar path/to/enron/v2/zip/files
 ```
+
+`path/to/enron/v2/zip/files` references the path to the Enron email dataset as explained in the `Requirements`
 
 ### Building the maven reporting site
 
